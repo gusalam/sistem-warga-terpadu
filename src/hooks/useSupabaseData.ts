@@ -409,7 +409,7 @@ export function usePengumumanList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pengumuman')
-        .select('*')
+        .select('*, rt:rt_id(nama, nomor), rw:rw_id(nama, nomor)')
         .order('is_pinned', { ascending: false })
         .order('published_at', { ascending: false });
       

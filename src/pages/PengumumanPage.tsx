@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -13,61 +14,86 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { dummyPengumuman, Pengumuman } from '@/lib/dummy-data';
+import { usePengumumanList, useCreatePengumuman } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Megaphone, Calendar, User } from 'lucide-react';
-import { toast } from 'sonner';
+import { AppRole } from '@/lib/types';
+import { Plus, Megaphone, Calendar, User, Pin, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 
 const PengumumanPage: React.FC = () => {
-  const { user } = useAuth();
-  const isPenduduk = user?.role === 'penduduk';
-  const isRT = user?.role === 'rt';
-  const isRW = user?.role === 'rw';
+  const { role, profile } = useAuth();
+  const isPenduduk = role === 'penduduk';
+  const isRT = role === 'rt';
+  const isRW = role === 'rw';
+  const isAdmin = role === 'admin';
   
-  const [pengumumanList, setPengumumanList] = useState<Pengumuman[]>(dummyPengumuman);
+  const { data: pengumumanList = [], isLoading } = usePengumumanList();
+  const createPengumuman = useCreatePengumuman();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     judul: '',
     isi: '',
-    role_target: 'semua' as Pengumuman['role_target'],
+    target_audience: [] as AppRole[],
+    is_pinned: false,
   });
 
   const handleAdd = () => {
-    setFormData({ judul: '', isi: '', role_target: 'semua' });
+    setFormData({ judul: '', isi: '', target_audience: [], is_pinned: false });
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newPengumuman: Pengumuman = {
-      id: `pg${Date.now()}`,
+    
+    await createPengumuman.mutateAsync({
       judul: formData.judul,
       isi: formData.isi,
-      role_target: formData.role_target,
-      tanggal: new Date().toISOString().split('T')[0],
-      pembuat: isRT ? 'RT' : isRW ? 'RW' : 'Admin',
-    };
-    setPengumumanList([newPengumuman, ...pengumumanList]);
-    toast.success('Pengumuman berhasil dibuat');
+      target_audience: formData.target_audience.length > 0 ? formData.target_audience : undefined,
+      is_pinned: formData.is_pinned,
+      rt_id: isRT ? profile?.rt_id || undefined : undefined,
+      rw_id: isRW ? profile?.rw_id || undefined : undefined,
+    });
+    
     setIsDialogOpen(false);
   };
 
-  const getTargetLabel = (target: Pengumuman['role_target']) => {
-    const labels: Record<Pengumuman['role_target'], string> = {
-      semua: 'Semua',
+  const toggleTargetAudience = (role: AppRole) => {
+    setFormData(prev => ({
+      ...prev,
+      target_audience: prev.target_audience.includes(role)
+        ? prev.target_audience.filter(r => r !== role)
+        : [...prev.target_audience, role]
+    }));
+  };
+
+  const getTargetLabel = (audience: AppRole[] | null) => {
+    if (!audience || audience.length === 0) return 'Semua';
+    const labels: Record<AppRole, string> = {
+      admin: 'Admin',
       rw: 'RW',
       rt: 'RT',
       penduduk: 'Penduduk',
     };
-    return labels[target];
+    return audience.map(r => labels[r]).join(', ');
   };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'd MMMM yyyy', { locale: localeId });
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-slide-up">
@@ -96,26 +122,34 @@ const PengumumanPage: React.FC = () => {
           pengumumanList.map((pengumuman) => (
             <div
               key={pengumuman.id}
-              className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-shadow"
+              className={`bg-card rounded-xl p-6 border transition-shadow hover:shadow-md ${
+                pengumuman.is_pinned ? 'border-primary/50 bg-primary/5' : 'border-border'
+              }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {pengumuman.is_pinned && (
+                      <div className="flex items-center gap-1 text-primary text-sm font-medium">
+                        <Pin size={14} />
+                        Disematkan
+                      </div>
+                    )}
                     <StatusBadge 
-                      status={getTargetLabel(pengumuman.role_target)} 
+                      status={getTargetLabel(pengumuman.target_audience)} 
                       variant="info" 
                     />
                   </div>
                   <h3 className="font-semibold text-lg mb-2">{pengumuman.judul}</h3>
-                  <p className="text-muted-foreground mb-4">{pengumuman.isi}</p>
+                  <p className="text-muted-foreground mb-4 whitespace-pre-wrap">{pengumuman.isi}</p>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User size={14} />
-                      {pengumuman.pembuat}
+                      {pengumuman.rt?.nama || pengumuman.rw?.nama || 'Admin'}
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar size={14} />
-                      {pengumuman.tanggal}
+                      {formatDate(pengumuman.published_at)}
                     </div>
                   </div>
                 </div>
@@ -147,24 +181,43 @@ const PengumumanPage: React.FC = () => {
                   required
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="role_target">Target Penerima</Label>
-                <Select
-                  value={formData.role_target}
-                  onValueChange={(value: Pengumuman['role_target']) => 
-                    setFormData({ ...formData, role_target: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih target" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="semua">Semua</SelectItem>
-                    {isRW && <SelectItem value="rt">Ketua RT</SelectItem>}
-                    <SelectItem value="penduduk">Penduduk</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Target Penerima</Label>
+                <div className="flex flex-wrap gap-4">
+                  {(isRW || isAdmin) && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="target-rt"
+                        checked={formData.target_audience.includes('rt')}
+                        onCheckedChange={() => toggleTargetAudience('rt')}
+                      />
+                      <Label htmlFor="target-rt" className="font-normal">Ketua RT</Label>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="target-penduduk"
+                      checked={formData.target_audience.includes('penduduk')}
+                      onCheckedChange={() => toggleTargetAudience('penduduk')}
+                    />
+                    <Label htmlFor="target-penduduk" className="font-normal">Penduduk</Label>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Kosongkan untuk mengirim ke semua
+                </p>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_pinned"
+                  checked={formData.is_pinned}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_pinned: !!checked })}
+                />
+                <Label htmlFor="is_pinned" className="font-normal">Sematkan pengumuman ini</Label>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="isi">Isi Pengumuman</Label>
                 <Textarea
@@ -181,7 +234,9 @@ const PengumumanPage: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit">Publikasikan</Button>
+              <Button type="submit" disabled={createPengumuman.isPending}>
+                {createPengumuman.isPending ? 'Menyimpan...' : 'Publikasikan'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

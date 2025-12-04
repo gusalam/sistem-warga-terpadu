@@ -15,9 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { usePengumumanList, useCreatePengumuman } from '@/hooks/useSupabaseData';
+import { useRealtimePengumuman } from '@/hooks/useRealtimePengumuman';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppRole } from '@/lib/types';
-import { Plus, Megaphone, Calendar, User, Pin, Loader2 } from 'lucide-react';
+import { Plus, Megaphone, Calendar, User, Pin, Loader2, Radio } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 
@@ -25,6 +26,9 @@ const PengumumanPage: React.FC = () => {
   const { role, profile } = useAuth();
   const isPenduduk = role === 'penduduk';
   const isRT = role === 'rt';
+  
+  // Enable realtime updates
+  useRealtimePengumuman();
   const isRW = role === 'rw';
   const isAdmin = role === 'admin';
   
@@ -101,12 +105,18 @@ const PengumumanPage: React.FC = () => {
         title="Pengumuman"
         description={isPenduduk ? 'Lihat pengumuman dari RT/RW' : 'Buat dan kelola pengumuman'}
         actions={
-          !isPenduduk && (
-            <Button onClick={handleAdd}>
-              <Plus size={18} />
-              Buat Pengumuman
-            </Button>
-          )
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Radio className="h-3 w-3 text-success animate-pulse" />
+              <span>Realtime</span>
+            </div>
+            {!isPenduduk && (
+              <Button onClick={handleAdd}>
+                <Plus size={18} />
+                Buat Pengumuman
+              </Button>
+            )}
+          </div>
         }
       />
 

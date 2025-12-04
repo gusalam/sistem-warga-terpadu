@@ -447,6 +447,98 @@ export function useCreatePengumuman() {
   });
 }
 
+export function useUpdatePengumuman() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...input }: Partial<Pengumuman> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('pengumuman')
+        .update(input)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pengumuman-list'] });
+      toast.success('Pengumuman berhasil diupdate');
+    },
+    onError: (error: Error) => {
+      toast.error(`Gagal update pengumuman: ${error.message}`);
+    },
+  });
+}
+
+export function useDeletePengumuman() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pengumuman')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pengumuman-list'] });
+      toast.success('Pengumuman berhasil dihapus');
+    },
+    onError: (error: Error) => {
+      toast.error(`Gagal menghapus pengumuman: ${error.message}`);
+    },
+  });
+}
+
+// ============ Profile Hooks ============
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  const { refreshProfile } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...input }: Partial<{ id: string; nama: string; phone: string; alamat: string; avatar_url: string }>) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(input)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async () => {
+      await refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ['my-penduduk'] });
+      toast.success('Profil berhasil diupdate');
+    },
+    onError: (error: Error) => {
+      toast.error(`Gagal update profil: ${error.message}`);
+    },
+  });
+}
+
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/${Date.now()}.${fileExt}`;
+  
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(fileName, file, { upsert: true });
+  
+  if (uploadError) throw uploadError;
+  
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(fileName);
+  
+  return data.publicUrl;
+}
+
 // ============ Dashboard Stats Hooks ============
 export function useDashboardStats() {
   return useQuery({

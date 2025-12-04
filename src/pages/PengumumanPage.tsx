@@ -14,28 +14,49 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { usePengumumanList, useCreatePengumuman } from '@/hooks/useSupabaseData';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { usePengumumanList, useCreatePengumuman, useUpdatePengumuman, useDeletePengumuman } from '@/hooks/useSupabaseData';
 import { useRealtimePengumuman } from '@/hooks/useRealtimePengumuman';
 import { useAuth } from '@/contexts/AuthContext';
-import { AppRole } from '@/lib/types';
-import { Plus, Megaphone, Calendar, User, Pin, Loader2, Radio } from 'lucide-react';
+import { AppRole, Pengumuman } from '@/lib/types';
+import { Plus, Megaphone, Calendar, User, Pin, Loader2, Radio, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 
 const PengumumanPage: React.FC = () => {
-  const { role, profile } = useAuth();
+  const { user, role, profile } = useAuth();
   const isPenduduk = role === 'penduduk';
   const isRT = role === 'rt';
-  
-  // Enable realtime updates
-  useRealtimePengumuman();
   const isRW = role === 'rw';
   const isAdmin = role === 'admin';
   
+  // Enable realtime updates
+  useRealtimePengumuman();
+  
   const { data: pengumumanList = [], isLoading } = usePengumumanList();
   const createPengumuman = useCreatePengumuman();
+  const updatePengumuman = useUpdatePengumuman();
+  const deletePengumuman = useDeletePengumuman();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingPengumuman, setEditingPengumuman] = useState<Pengumuman | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     judul: '',
     isi: '',
@@ -44,31 +65,65 @@ const PengumumanPage: React.FC = () => {
   });
 
   const handleAdd = () => {
+    setEditingPengumuman(null);
     setFormData({ judul: '', isi: '', target_audience: [], is_pinned: false });
     setIsDialogOpen(true);
+  };
+
+  const handleEdit = (pengumuman: Pengumuman) => {
+    setEditingPengumuman(pengumuman);
+    setFormData({
+      judul: pengumuman.judul,
+      isi: pengumuman.isi,
+      target_audience: pengumuman.target_audience || [],
+      is_pinned: pengumuman.is_pinned || false,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeletingId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingId) return;
+    await deletePengumuman.mutateAsync(deletingId);
+    setIsDeleteDialogOpen(false);
+    setDeletingId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    await createPengumuman.mutateAsync({
-      judul: formData.judul,
-      isi: formData.isi,
-      target_audience: formData.target_audience.length > 0 ? formData.target_audience : undefined,
-      is_pinned: formData.is_pinned,
-      rt_id: isRT ? profile?.rt_id || undefined : undefined,
-      rw_id: isRW ? profile?.rw_id || undefined : undefined,
-    });
+    if (editingPengumuman) {
+      await updatePengumuman.mutateAsync({
+        id: editingPengumuman.id,
+        judul: formData.judul,
+        isi: formData.isi,
+        target_audience: formData.target_audience.length > 0 ? formData.target_audience : null,
+        is_pinned: formData.is_pinned,
+      });
+    } else {
+      await createPengumuman.mutateAsync({
+        judul: formData.judul,
+        isi: formData.isi,
+        target_audience: formData.target_audience.length > 0 ? formData.target_audience : undefined,
+        is_pinned: formData.is_pinned,
+        rt_id: isRT ? profile?.rt_id || undefined : undefined,
+        rw_id: isRW ? profile?.rw_id || undefined : undefined,
+      });
+    }
     
     setIsDialogOpen(false);
   };
 
-  const toggleTargetAudience = (role: AppRole) => {
+  const toggleTargetAudience = (targetRole: AppRole) => {
     setFormData(prev => ({
       ...prev,
-      target_audience: prev.target_audience.includes(role)
-        ? prev.target_audience.filter(r => r !== role)
-        : [...prev.target_audience, role]
+      target_audience: prev.target_audience.includes(targetRole)
+        ? prev.target_audience.filter(r => r !== targetRole)
+        : [...prev.target_audience, targetRole]
     }));
   };
 
@@ -89,6 +144,11 @@ const PengumumanPage: React.FC = () => {
     } catch {
       return dateString;
     }
+  };
+
+  const canEditDelete = (pengumuman: Pengumuman) => {
+    if (isAdmin) return true;
+    return pengumuman.author_id === user?.id;
   };
 
   if (isLoading) {
@@ -163,8 +223,32 @@ const PengumumanPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                  <Megaphone size={24} />
+                <div className="flex items-start gap-2">
+                  <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                    <Megaphone size={24} />
+                  </div>
+                  {canEditDelete(pengumuman) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(pengumuman)}>
+                          <Edit2 size={14} className="mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(pengumuman.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 size={14} className="mr-2" />
+                          Hapus
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             </div>
@@ -172,12 +256,14 @@ const PengumumanPage: React.FC = () => {
         )}
       </div>
 
-      {/* Add Pengumuman Dialog */}
+      {/* Add/Edit Pengumuman Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Buat Pengumuman Baru</DialogTitle>
-            <DialogDescription>Buat pengumuman untuk warga</DialogDescription>
+            <DialogTitle>{editingPengumuman ? 'Edit Pengumuman' : 'Buat Pengumuman Baru'}</DialogTitle>
+            <DialogDescription>
+              {editingPengumuman ? 'Ubah informasi pengumuman' : 'Buat pengumuman untuk warga'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
@@ -244,13 +330,35 @@ const PengumumanPage: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={createPengumuman.isPending}>
-                {createPengumuman.isPending ? 'Menyimpan...' : 'Publikasikan'}
+              <Button type="submit" disabled={createPengumuman.isPending || updatePengumuman.isPending}>
+                {(createPengumuman.isPending || updatePengumuman.isPending) ? 'Menyimpan...' : 
+                  editingPengumuman ? 'Update' : 'Publikasikan'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Pengumuman?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Pengumuman akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePengumuman.isPending ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

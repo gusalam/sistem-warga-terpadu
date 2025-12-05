@@ -19,19 +19,8 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   // Redirect based on role
-  const getRedirectPath = (userRole: AppRole | null): string => {
-    switch (userRole) {
-      case 'admin':
-        return '/admin';
-      case 'rw':
-        return '/rw';
-      case 'rt':
-        return '/rt';
-      case 'penduduk':
-        return '/dashboard';
-      default:
-        return '/dashboard';
-    }
+  const getRedirectPath = (): string => {
+    return '/dashboard';
   };
 
   if (authLoading) {
@@ -43,7 +32,7 @@ const Login: React.FC = () => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={getRedirectPath(role)} replace />;
+    return <Navigate to={getRedirectPath()} replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {

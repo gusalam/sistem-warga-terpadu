@@ -5,7 +5,10 @@ import { Surat, CreateSuratInput, SuratStatus } from '@/lib/types';
 
 export interface SuratWithPenduduk extends Surat {
   penduduk_nama?: string;
+  penduduk_nik?: string;
+  penduduk_alamat?: string;
   rt_nama?: string;
+  rw_nama?: string;
 }
 
 export function useSuratList(rtId?: string, pendudukId?: string) {
@@ -14,7 +17,7 @@ export function useSuratList(rtId?: string, pendudukId?: string) {
     queryFn: async (): Promise<SuratWithPenduduk[]> => {
       let query = supabase
         .from('surat')
-        .select('*, penduduk:penduduk_id(nama), rt:rt_id(nama)')
+        .select('*, penduduk:penduduk_id(nama, nik, alamat), rt:rt_id(nama, rw:rw_id(nama))')
         .order('created_at', { ascending: false });
 
       if (rtId) {
@@ -43,7 +46,10 @@ export function useSuratList(rtId?: string, pendudukId?: string) {
         created_at: s.created_at,
         updated_at: s.updated_at,
         penduduk_nama: s.penduduk?.nama,
+        penduduk_nik: s.penduduk?.nik,
+        penduduk_alamat: s.penduduk?.alamat,
         rt_nama: s.rt?.nama,
+        rw_nama: s.rt?.rw?.nama,
       }));
     },
   });

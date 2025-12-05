@@ -59,7 +59,14 @@ const Index: React.FC = () => {
                   <ArrowRight size={18} />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Pelajari Lebih Lanjut
               </Button>
             </div>
@@ -68,7 +75,7 @@ const Index: React.FC = () => {
       </header>
 
       {/* Features Section */}
-      <section className="py-20 bg-muted/30">
+      <section id="features" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Fitur Utama</h2>
           <div className="grid md:grid-cols-3 gap-8">

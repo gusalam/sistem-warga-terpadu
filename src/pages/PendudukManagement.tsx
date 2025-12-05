@@ -14,6 +14,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,8 +33,9 @@ import {
 import { usePendudukList, useCreatePenduduk, useUpdatePenduduk, useDeletePenduduk, PendudukWithRT } from '@/hooks/usePendudukData';
 import { useRTList } from '@/hooks/useRTData';
 import { useCreateUser } from '@/hooks/useCreateUser';
+import { useDeleteUser } from '@/hooks/useDeleteUser';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Pencil, Trash2, Search, Mail, Lock, Loader2, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Mail, Lock, Loader2, Download, AlertTriangle } from 'lucide-react';
 import { exportToCSV, formatDate, formatGender, ExportColumn } from '@/lib/exportUtils';
 import { toast } from 'sonner';
 
@@ -44,10 +55,12 @@ const PendudukManagement: React.FC = () => {
   const createPenduduk = useCreatePenduduk();
   const updatePenduduk = useUpdatePenduduk();
   const deletePenduduk = useDeletePenduduk();
+  const deleteUser = useDeleteUser();
   const createUser = useCreateUser();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRTFilter, setSelectedRTFilter] = useState<string>('all');
+  const [deleteTarget, setDeleteTarget] = useState<PendudukWithRT | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
   const [editingPenduduk, setEditingPenduduk] = useState<PendudukWithRT | null>(null);
@@ -106,9 +119,32 @@ const PendudukManagement: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (penduduk: PendudukWithRT) => {
-    if (confirm(`Hapus data ${penduduk.nama}?`)) {
-      deletePenduduk.mutate(penduduk.id);
+  const handleDelete = (penduduk: PendudukWithRT) => {
+    setDeleteTarget(penduduk);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    
+    // If penduduk has linked account, delete the auth user first (this will cascade)
+    if (deleteTarget.user_id) {
+      deleteUser.mutate(
+        { user_id: deleteTarget.user_id, penduduk_id: deleteTarget.id },
+        {
+          onSuccess: () => {
+            // After user deleted, also delete penduduk data
+            deletePenduduk.mutate(deleteTarget.id);
+            setDeleteTarget(null);
+          },
+          onError: () => {
+            setDeleteTarget(null);
+          }
+        }
+      );
+    } else {
+      // No linked account, just delete penduduk data
+      deletePenduduk.mutate(deleteTarget.id);
+      setDeleteTarget(null);
     }
   };
 
@@ -454,6 +490,40 @@ const PendudukManagement: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="text-destructive" size={20} />
+              Konfirmasi Hapus
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Anda akan menghapus data <strong>{deleteTarget?.nama}</strong>.</p>
+              {deleteTarget?.user_id && (
+                <p className="text-destructive font-medium">
+                  ⚠️ Penduduk ini memiliki akun login. Akun tersebut akan dihapus permanen dari sistem dan tidak bisa dikembalikan!
+                </p>
+              )}
+              <p>Apakah Anda yakin ingin melanjutkan?</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteUser.isPending || deletePenduduk.isPending}
+            >
+              {(deleteUser.isPending || deletePenduduk.isPending) && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Hapus Permanen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

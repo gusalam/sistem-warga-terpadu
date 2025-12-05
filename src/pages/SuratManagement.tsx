@@ -28,6 +28,8 @@ import { SuratStatus, SURAT_STATUS_LABELS, JENIS_SURAT_OPTIONS } from '@/lib/typ
 import { Plus, Search, Check, X, Download, Eye, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { downloadSurat } from '@/lib/suratGenerator';
+import { toast } from 'sonner';
 
 const SuratManagement: React.FC = () => {
   const { user, role, profile } = useAuth();
@@ -145,6 +147,23 @@ const SuratManagement: React.FC = () => {
     }
   };
 
+  const handleDownload = (surat: SuratWithPenduduk) => {
+    downloadSurat({
+      id: surat.id,
+      nomor_surat: surat.nomor_surat,
+      jenis_surat: surat.jenis_surat,
+      keperluan: surat.keperluan,
+      created_at: surat.created_at,
+      processed_at: surat.processed_at,
+      penduduk_nama: surat.penduduk_nama || 'Tidak diketahui',
+      penduduk_nik: surat.penduduk_nik,
+      penduduk_alamat: surat.penduduk_alamat,
+      rt_nama: surat.rt_nama,
+      rw_nama: surat.rw_nama,
+    });
+    toast.success('Surat dibuka di tab baru, silakan cetak');
+  };
+
   const getStatusVariant = (status: SuratStatus): 'warning' | 'info' | 'success' | 'error' => {
     const variants: Record<SuratStatus, 'warning' | 'info' | 'success' | 'error'> = {
       pending: 'warning',
@@ -189,7 +208,7 @@ const SuratManagement: React.FC = () => {
             Detail
           </Button>
           {s.status === 'selesai' && (
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => handleDownload(s)}>
               <Download size={14} />
               Unduh
             </Button>

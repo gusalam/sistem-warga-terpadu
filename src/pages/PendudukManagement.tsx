@@ -24,12 +24,16 @@ import { usePendudukList, useCreatePenduduk, useUpdatePenduduk, useDeletePendudu
 import { useRTList } from '@/hooks/useRTData';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Pencil, Trash2, Search, Mail, Lock, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Mail, Lock, Loader2, Download } from 'lucide-react';
+import { exportToCSV, formatDate, formatGender, ExportColumn } from '@/lib/exportUtils';
+import { toast } from 'sonner';
 
 const PendudukManagement: React.FC = () => {
   const { role, profile } = useAuth();
+  const isAdmin = role === 'admin';
   const isRW = role === 'rw';
   const isRT = role === 'rt';
+  const canExport = isAdmin || isRW || isRT;
   
   // Filter based on role
   const rtIdFilter = isRT ? profile?.rt_id || undefined : undefined;
@@ -142,6 +146,26 @@ const PendudukManagement: React.FC = () => {
     });
   };
 
+  const handleExport = () => {
+    const exportColumns: ExportColumn<PendudukWithRT>[] = [
+      { key: 'nama', header: 'Nama' },
+      { key: 'nik', header: 'NIK' },
+      { key: 'jenis_kelamin', header: 'Jenis Kelamin', render: (p) => formatGender(p.jenis_kelamin) },
+      { key: 'tanggal_lahir', header: 'Tanggal Lahir', render: (p) => formatDate(p.tanggal_lahir) },
+      { key: 'alamat', header: 'Alamat', render: (p) => p.alamat || '-' },
+      { key: 'phone', header: 'No. HP', render: (p) => p.phone || '-' },
+      { key: 'rt_nama', header: 'RT', render: (p) => p.rt_nama || '-' },
+      { key: 'status_kependudukan', header: 'Status', render: (p) => p.status_kependudukan || '-' },
+      { key: 'punya_akun', header: 'Punya Akun', render: (p) => p.user_id ? 'Ya' : 'Tidak' },
+    ];
+
+    const dataToExport = filteredPenduduk.length > 0 ? filteredPenduduk : pendudukList;
+    const filename = `data-penduduk-${new Date().toISOString().split('T')[0]}`;
+    
+    exportToCSV(dataToExport, exportColumns, filename);
+    toast.success(`Berhasil export ${dataToExport.length} data penduduk`);
+  };
+
   const columns: Column<PendudukWithRT>[] = [
     { key: 'nama', header: 'Nama' },
     { key: 'nik', header: 'NIK' },
@@ -217,12 +241,20 @@ const PendudukManagement: React.FC = () => {
         title="Data Penduduk"
         description={isRT ? 'Kelola data penduduk di RT Anda' : 'Lihat data penduduk di wilayah Anda'}
         actions={
-          isRT && (
-            <Button onClick={handleAdd}>
-              <Plus size={18} />
-              Tambah Penduduk
-            </Button>
-          )
+          <div className="flex gap-2">
+            {canExport && (
+              <Button variant="outline" onClick={handleExport}>
+                <Download size={18} />
+                Export CSV
+              </Button>
+            )}
+            {isRT && (
+              <Button onClick={handleAdd}>
+                <Plus size={18} />
+                Tambah Penduduk
+              </Button>
+            )}
+          </div>
         }
       />
 

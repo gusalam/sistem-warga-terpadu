@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   LayoutDashboard,
   Users,
@@ -49,6 +50,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const { profile, role, logout } = useAuth();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const getNavItems = () => {
     switch (role) {
@@ -100,51 +102,73 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     return role ? labels[role] || 'User' : 'User';
   };
 
+  const handleLogoutClick = () => {
+    setIsLogoutDialogOpen(true);
+  };
+
+  const confirmLogout = () => {
+    setIsLogoutDialogOpen(false);
+    logout();
+  };
+
   return (
-    <aside className="h-full flex flex-col bg-sidebar border-r border-sidebar-border">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Building2 className="text-sidebar-primary-foreground" size={24} />
-          </div>
-          <div>
-            <h1 className="text-sidebar-foreground font-bold text-lg">Sistem RT/RW</h1>
-            <p className="text-sidebar-foreground/60 text-xs">Manajemen Wilayah</p>
-          </div>
-        </div>
-      </div>
-
-      {/* User Info */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center">
-            <UserCircle className="text-sidebar-foreground/70" size={24} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sidebar-foreground font-medium text-sm truncate">{profile?.nama || 'User'}</p>
-            <p className="text-sidebar-foreground/60 text-xs">{getRoleLabel()}</p>
+    <>
+      <aside className="h-full flex flex-col bg-sidebar border-r border-sidebar-border">
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
+              <Building2 className="text-sidebar-primary-foreground" size={24} />
+            </div>
+            <div>
+              <h1 className="text-sidebar-foreground font-bold text-lg">Sistem RT/RW</h1>
+              <p className="text-sidebar-foreground/60 text-xs">Manajemen Wilayah</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {getNavItems().map((item) => (
-          <NavItem key={item.to} {...item} onClick={onNavigate} />
-        ))}
-      </nav>
+        {/* User Info */}
+        <div className="p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <UserCircle className="text-sidebar-foreground/70" size={24} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sidebar-foreground font-medium text-sm truncate">{profile?.nama || 'User'}</p>
+              <p className="text-sidebar-foreground/60 text-xs">{getRoleLabel()}</p>
+            </div>
+          </div>
+        </div>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-sidebar-border">
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
-        >
-          <LogOut size={20} />
-          <span className="font-medium">Keluar</span>
-        </button>
-      </div>
-    </aside>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {getNavItems().map((item) => (
+            <NavItem key={item.to} {...item} onClick={onNavigate} />
+          ))}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-sidebar-border">
+          <button
+            onClick={handleLogoutClick}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+          >
+            <LogOut size={20} />
+            <span className="font-medium">Keluar</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        open={isLogoutDialogOpen}
+        onOpenChange={setIsLogoutDialogOpen}
+        title="Keluar dari Sistem"
+        description="Apakah Anda yakin ingin keluar dari sistem? Anda harus login kembali untuk mengakses dashboard."
+        confirmText="Keluar"
+        variant="warning"
+        onConfirm={confirmLogout}
+      />
+    </>
   );
 };

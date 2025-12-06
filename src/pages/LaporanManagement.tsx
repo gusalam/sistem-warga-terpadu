@@ -21,18 +21,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useLaporanList, useCreateLaporan, useUpdateLaporanStatus, LaporanWithPenduduk } from '@/hooks/useLaporanData';
 import { usePendudukList } from '@/hooks/usePendudukData';
 import { useAuth } from '@/contexts/AuthContext';
 import { LaporanStatus, LAPORAN_STATUS_LABELS, KATEGORI_LAPORAN_OPTIONS } from '@/lib/types';
-import { Plus, Search, Eye, CheckCircle, Loader2 } from 'lucide-react';
+import { exportToCSV, ExportColumn, formatDate } from '@/lib/exportUtils';
+import { Plus, Search, Eye, CheckCircle, Loader2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const LaporanManagement: React.FC = () => {
   const { user, role, profile } = useAuth();
   const isPenduduk = role === 'penduduk';
   const isRT = role === 'rt';
+  const isRW = role === 'rw';
+  const isAdmin = role === 'admin';
+  const canExport = isAdmin || isRW || isRT;
   
   const [pendudukData, setPendudukData] = useState<{ id: string; rt_id: string } | null>(null);
 
@@ -65,6 +71,9 @@ const LaporanManagement: React.FC = () => {
   const [kategoriFilter, setKategoriFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isProcessDialogOpen, setIsProcessDialogOpen] = useState(false);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [selectedLaporan, setSelectedLaporan] = useState<LaporanWithPenduduk | null>(null);
   const [formData, setFormData] = useState({
     judul: '',
@@ -93,8 +102,12 @@ const LaporanManagement: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitDialogOpen(true);
+  };
+
+  const confirmSubmit = () => {
     if (!pendudukData) return;
 
     createLaporan.mutate({
@@ -105,24 +118,36 @@ const LaporanManagement: React.FC = () => {
       rt_id: pendudukData.rt_id,
     }, {
       onSuccess: () => {
+        setIsSubmitDialogOpen(false);
         setIsDialogOpen(false);
       },
     });
   };
 
   const handleProcess = () => {
+    setIsProcessDialogOpen(true);
+  };
+
+  const confirmProcess = () => {
     if (selectedLaporan && user) {
       updateStatus.mutate({
         id: selectedLaporan.id,
         status: 'diproses',
         processed_by: user.id,
       }, {
-        onSuccess: () => setIsDetailOpen(false),
+        onSuccess: () => {
+          setIsProcessDialogOpen(false);
+          setIsDetailOpen(false);
+        },
       });
     }
   };
 
   const handleComplete = () => {
+    setIsCompleteDialogOpen(true);
+  };
+
+  const confirmComplete = () => {
     if (selectedLaporan && user) {
       updateStatus.mutate({
         id: selectedLaporan.id,
@@ -130,9 +155,28 @@ const LaporanManagement: React.FC = () => {
         tanggapan: tanggapan || undefined,
         processed_by: user.id,
       }, {
-        onSuccess: () => setIsDetailOpen(false),
+        onSuccess: () => {
+          setIsCompleteDialogOpen(false);
+          setIsDetailOpen(false);
+        },
       });
     }
+  };
+
+  const handleExport = () => {
+    const columns: ExportColumn<LaporanWithPenduduk>[] = [
+      { key: 'judul', header: 'Judul' },
+      { key: 'penduduk_nama', header: 'Pelapor' },
+      { key: 'rt_nama', header: 'RT' },
+      { key: 'kategori', header: 'Kategori', render: (item) => getKategoriLabel(item.kategori || '') },
+      { key: 'deskripsi', header: 'Deskripsi' },
+      { key: 'status', header: 'Status', render: (item) => LAPORAN_STATUS_LABELS[item.status] },
+      { key: 'tanggapan', header: 'Tanggapan' },
+      { key: 'created_at', header: 'Tanggal Laporan', render: (item) => formatDate(item.created_at) },
+    ];
+
+    exportToCSV(filteredLaporan, columns, `laporan_${format(new Date(), 'yyyy-MM-dd')}`);
+    toast.success('Laporan berhasil diexport!');
   };
 
   const getStatusVariant = (status: LaporanStatus): 'warning' | 'info' | 'success' | 'error' => {
@@ -199,12 +243,20 @@ const LaporanManagement: React.FC = () => {
         title={isPenduduk ? 'Laporan Saya' : 'Manajemen Laporan'}
         description={isPenduduk ? 'Buat dan pantau laporan/aduan Anda' : 'Kelola laporan/aduan warga'}
         actions={
-          isPenduduk && pendudukData && (
-            <Button onClick={handleAdd}>
-              <Plus size={18} />
-              Buat Laporan
-            </Button>
-          )
+          <div className="flex gap-2">
+            {canExport && (
+              <Button variant="outline" onClick={handleExport}>
+                <Download size={18} />
+                Export CSV
+              </Button>
+            )}
+            {isPenduduk && pendudukData && (
+              <Button onClick={handleAdd}>
+                <Plus size={18} />
+                Buat Laporan
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -321,8 +373,7 @@ const LaporanManagement: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={createLaporan.isPending}>
-                {createLaporan.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button type="submit">
                 Kirim Laporan
               </Button>
             </DialogFooter>
@@ -404,6 +455,42 @@ const LaporanManagement: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Submit Confirmation Dialog */}
+      <ConfirmDialog
+        open={isSubmitDialogOpen}
+        onOpenChange={setIsSubmitDialogOpen}
+        title="Kirim Laporan"
+        description="Apakah Anda yakin ingin mengirim laporan ini? Pastikan informasi yang Anda masukkan sudah benar."
+        confirmText="Kirim"
+        variant="info"
+        isLoading={createLaporan.isPending}
+        onConfirm={confirmSubmit}
+      />
+
+      {/* Process Confirmation Dialog */}
+      <ConfirmDialog
+        open={isProcessDialogOpen}
+        onOpenChange={setIsProcessDialogOpen}
+        title="Proses Laporan"
+        description="Apakah Anda yakin ingin memproses laporan ini? Status akan berubah menjadi 'Diproses'."
+        confirmText="Proses"
+        variant="info"
+        isLoading={updateStatus.isPending}
+        onConfirm={confirmProcess}
+      />
+
+      {/* Complete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isCompleteDialogOpen}
+        onOpenChange={setIsCompleteDialogOpen}
+        title="Selesaikan Laporan"
+        description="Apakah Anda yakin ingin menandai laporan ini sebagai selesai?"
+        confirmText="Selesaikan"
+        variant="info"
+        isLoading={updateStatus.isPending}
+        onConfirm={confirmComplete}
+      />
     </div>
   );
 };

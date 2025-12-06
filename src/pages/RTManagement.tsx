@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useRTList, useCreateRT, useUpdateRT, useDeleteRT, RTWithStats } from '@/hooks/useRTData';
 import { useRWList } from '@/hooks/useRWData';
 import { useCreateUser } from '@/hooks/useCreateUser';
@@ -44,8 +45,11 @@ const RTManagement: React.FC = () => {
   const [selectedRWFilter, setSelectedRWFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [editingRT, setEditingRT] = useState<RTWithStats | null>(null);
   const [selectedRT, setSelectedRT] = useState<RTWithStats | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RTWithStats | null>(null);
   const [formData, setFormData] = useState({ nomor: '', nama: '', rw_id: '', alamat: '' });
   const [accountData, setAccountData] = useState({ email: '', password: '', nama_ketua: '' });
 
@@ -75,9 +79,19 @@ const RTManagement: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (rt: RTWithStats) => {
-    if (confirm(`Hapus ${rt.nama}?`)) {
-      deleteRT.mutate(rt.id);
+  const handleDelete = (rt: RTWithStats) => {
+    setDeleteTarget(rt);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteRT.mutate(deleteTarget.id, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false);
+          setDeleteTarget(null);
+        },
+      });
     }
   };
 
@@ -87,14 +101,27 @@ const RTManagement: React.FC = () => {
     setIsAccountDialogOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaveDialogOpen(true);
+  };
+
+  const confirmSave = () => {
     if (editingRT) {
-      updateRT.mutate({ id: editingRT.id, data: formData });
+      updateRT.mutate({ id: editingRT.id, data: formData }, {
+        onSuccess: () => {
+          setIsSaveDialogOpen(false);
+          setIsDialogOpen(false);
+        },
+      });
     } else {
-      createRT.mutate(formData);
+      createRT.mutate(formData, {
+        onSuccess: () => {
+          setIsSaveDialogOpen(false);
+          setIsDialogOpen(false);
+        },
+      });
     }
-    setIsDialogOpen(false);
   };
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
@@ -278,8 +305,7 @@ const RTManagement: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={createRT.isPending || updateRT.isPending}>
-                {(createRT.isPending || updateRT.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button type="submit">
                 {editingRT ? 'Simpan' : 'Tambah'}
               </Button>
             </DialogFooter>
@@ -352,6 +378,30 @@ const RTManagement: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Hapus RT"
+        description={`Apakah Anda yakin ingin menghapus ${deleteTarget?.nama}? Data penduduk dan profil terkait akan terputus dari RT ini.`}
+        confirmText="Hapus"
+        variant="danger"
+        isLoading={deleteRT.isPending}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Save Confirmation Dialog */}
+      <ConfirmDialog
+        open={isSaveDialogOpen}
+        onOpenChange={setIsSaveDialogOpen}
+        title={editingRT ? 'Simpan Perubahan' : 'Tambah RT'}
+        description={editingRT ? 'Apakah Anda yakin ingin menyimpan perubahan data RT ini?' : 'Apakah Anda yakin ingin menambahkan RT baru ini?'}
+        confirmText={editingRT ? 'Simpan' : 'Tambah'}
+        variant="info"
+        isLoading={createRT.isPending || updateRT.isPending}
+        onConfirm={confirmSave}
+      />
     </div>
   );
 };

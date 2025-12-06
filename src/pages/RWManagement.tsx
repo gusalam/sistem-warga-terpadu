@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useRWList, useCreateRW, useUpdateRW, useDeleteRW, RWWithStats } from '@/hooks/useRWData';
 import { useCreateUser } from '@/hooks/useCreateUser';
 import { Plus, Pencil, Trash2, Search, Mail, Lock, Loader2 } from 'lucide-react';
@@ -26,8 +27,11 @@ const RWManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [editingRW, setEditingRW] = useState<RWWithStats | null>(null);
   const [selectedRW, setSelectedRW] = useState<RWWithStats | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RWWithStats | null>(null);
   const [formData, setFormData] = useState({ nomor: '', nama: '', alamat: '' });
   const [accountData, setAccountData] = useState({ email: '', password: '', nama_ketua: '' });
 
@@ -50,9 +54,19 @@ const RWManagement: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (rw: RWWithStats) => {
-    if (confirm(`Hapus ${rw.nama}?`)) {
-      deleteRW.mutate(rw.id);
+  const handleDelete = (rw: RWWithStats) => {
+    setDeleteTarget(rw);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteRW.mutate(deleteTarget.id, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false);
+          setDeleteTarget(null);
+        },
+      });
     }
   };
 
@@ -62,14 +76,27 @@ const RWManagement: React.FC = () => {
     setIsAccountDialogOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaveDialogOpen(true);
+  };
+
+  const confirmSave = () => {
     if (editingRW) {
-      updateRW.mutate({ id: editingRW.id, data: formData });
+      updateRW.mutate({ id: editingRW.id, data: formData }, {
+        onSuccess: () => {
+          setIsSaveDialogOpen(false);
+          setIsDialogOpen(false);
+        },
+      });
     } else {
-      createRW.mutate(formData);
+      createRW.mutate(formData, {
+        onSuccess: () => {
+          setIsSaveDialogOpen(false);
+          setIsDialogOpen(false);
+        },
+      });
     }
-    setIsDialogOpen(false);
   };
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
@@ -214,8 +241,7 @@ const RWManagement: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={createRW.isPending || updateRW.isPending}>
-                {(createRW.isPending || updateRW.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button type="submit">
                 {editingRW ? 'Simpan' : 'Tambah'}
               </Button>
             </DialogFooter>
@@ -288,6 +314,30 @@ const RWManagement: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Hapus RW"
+        description={`Apakah Anda yakin ingin menghapus ${deleteTarget?.nama}? Data RT dan profil terkait akan terputus dari RW ini.`}
+        confirmText="Hapus"
+        variant="danger"
+        isLoading={deleteRW.isPending}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Save Confirmation Dialog */}
+      <ConfirmDialog
+        open={isSaveDialogOpen}
+        onOpenChange={setIsSaveDialogOpen}
+        title={editingRW ? 'Simpan Perubahan' : 'Tambah RW'}
+        description={editingRW ? 'Apakah Anda yakin ingin menyimpan perubahan data RW ini?' : 'Apakah Anda yakin ingin menambahkan RW baru ini?'}
+        confirmText={editingRW ? 'Simpan' : 'Tambah'}
+        variant="info"
+        isLoading={createRW.isPending || updateRW.isPending}
+        onConfirm={confirmSave}
+      />
     </div>
   );
 };

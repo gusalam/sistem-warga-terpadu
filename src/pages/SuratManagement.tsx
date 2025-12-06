@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useSuratList, useCreateSurat, useUpdateSuratStatus, SuratWithPenduduk } from '@/hooks/useSuratData';
 import { usePendudukList } from '@/hooks/usePendudukData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,6 +67,10 @@ const SuratManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isProcessDialogOpen, setIsProcessDialogOpen] = useState(false);
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedSurat, setSelectedSurat] = useState<SuratWithPenduduk | null>(null);
   const [formData, setFormData] = useState({
     jenis_surat: 'domisili',
@@ -90,8 +95,12 @@ const SuratManagement: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitDialogOpen(true);
+  };
+
+  const confirmSubmit = () => {
     if (!pendudukId) return;
 
     // Get penduduk's rt_id
@@ -105,24 +114,40 @@ const SuratManagement: React.FC = () => {
       rt_id: penduduk.rt_id,
     }, {
       onSuccess: () => {
+        setIsSubmitDialogOpen(false);
         setIsDialogOpen(false);
       },
     });
   };
 
   const handleApprove = () => {
+    setIsApproveDialogOpen(true);
+  };
+
+  const confirmApprove = () => {
     if (selectedSurat && user) {
       updateStatus.mutate({
         id: selectedSurat.id,
         status: 'selesai',
         processed_by: user.id,
       }, {
-        onSuccess: () => setIsDetailOpen(false),
+        onSuccess: () => {
+          setIsApproveDialogOpen(false);
+          setIsDetailOpen(false);
+        },
       });
     }
   };
 
   const handleReject = () => {
+    if (!rejectReason) {
+      toast.error('Harap masukkan alasan penolakan');
+      return;
+    }
+    setIsRejectDialogOpen(true);
+  };
+
+  const confirmReject = () => {
     if (selectedSurat && rejectReason && user) {
       updateStatus.mutate({
         id: selectedSurat.id,
@@ -130,19 +155,29 @@ const SuratManagement: React.FC = () => {
         catatan: rejectReason,
         processed_by: user.id,
       }, {
-        onSuccess: () => setIsDetailOpen(false),
+        onSuccess: () => {
+          setIsRejectDialogOpen(false);
+          setIsDetailOpen(false);
+        },
       });
     }
   };
 
   const handleProcess = () => {
+    setIsProcessDialogOpen(true);
+  };
+
+  const confirmProcess = () => {
     if (selectedSurat && user) {
       updateStatus.mutate({
         id: selectedSurat.id,
         status: 'diproses',
         processed_by: user.id,
       }, {
-        onSuccess: () => setIsDetailOpen(false),
+        onSuccess: () => {
+          setIsProcessDialogOpen(false);
+          setIsDetailOpen(false);
+        },
       });
     }
   };
@@ -333,8 +368,7 @@ const SuratManagement: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" disabled={createSurat.isPending}>
-                {createSurat.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              <Button type="submit">
                 Ajukan
               </Button>
             </DialogFooter>
@@ -405,7 +439,7 @@ const SuratManagement: React.FC = () => {
                       <Check size={16} />
                       Setujui
                     </Button>
-                    <Button onClick={handleReject} variant="destructive" className="flex-1" disabled={updateStatus.isPending || !rejectReason}>
+                    <Button onClick={handleReject} variant="destructive" className="flex-1" disabled={updateStatus.isPending}>
                       <X size={16} />
                       Tolak
                     </Button>
@@ -429,7 +463,7 @@ const SuratManagement: React.FC = () => {
                       <Check size={16} />
                       Setujui
                     </Button>
-                    <Button onClick={handleReject} variant="destructive" className="flex-1" disabled={updateStatus.isPending || !rejectReason}>
+                    <Button onClick={handleReject} variant="destructive" className="flex-1" disabled={updateStatus.isPending}>
                       <X size={16} />
                       Tolak
                     </Button>
@@ -440,6 +474,54 @@ const SuratManagement: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Submit Confirmation Dialog */}
+      <ConfirmDialog
+        open={isSubmitDialogOpen}
+        onOpenChange={setIsSubmitDialogOpen}
+        title="Ajukan Surat"
+        description="Apakah Anda yakin ingin mengajukan surat ini? Pastikan jenis surat yang dipilih sudah benar."
+        confirmText="Ajukan"
+        variant="info"
+        isLoading={createSurat.isPending}
+        onConfirm={confirmSubmit}
+      />
+
+      {/* Process Confirmation Dialog */}
+      <ConfirmDialog
+        open={isProcessDialogOpen}
+        onOpenChange={setIsProcessDialogOpen}
+        title="Proses Surat"
+        description="Apakah Anda yakin ingin memproses pengajuan surat ini? Status akan berubah menjadi 'Diproses'."
+        confirmText="Proses"
+        variant="info"
+        isLoading={updateStatus.isPending}
+        onConfirm={confirmProcess}
+      />
+
+      {/* Approve Confirmation Dialog */}
+      <ConfirmDialog
+        open={isApproveDialogOpen}
+        onOpenChange={setIsApproveDialogOpen}
+        title="Setujui Surat"
+        description="Apakah Anda yakin ingin menyetujui pengajuan surat ini? Surat akan dapat diunduh oleh pemohon."
+        confirmText="Setujui"
+        variant="info"
+        isLoading={updateStatus.isPending}
+        onConfirm={confirmApprove}
+      />
+
+      {/* Reject Confirmation Dialog */}
+      <ConfirmDialog
+        open={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        title="Tolak Surat"
+        description={`Apakah Anda yakin ingin menolak pengajuan surat ini dengan alasan: "${rejectReason}"?`}
+        confirmText="Tolak"
+        variant="danger"
+        isLoading={updateStatus.isPending}
+        onConfirm={confirmReject}
+      />
     </div>
   );
 };

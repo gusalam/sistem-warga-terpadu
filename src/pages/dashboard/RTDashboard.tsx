@@ -81,36 +81,39 @@ const RTDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Link to="/rt/penduduk" className="bg-card rounded-xl p-6 border border-border hover:border-primary transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-              <Users size={24} />
+        <Link to="/penduduk" className="bg-card rounded-xl p-4 sm:p-6 border border-border hover:border-primary transition-colors group">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <Users size={20} className="sm:hidden" />
+              <Users size={24} className="hidden sm:block" />
             </div>
-            <div>
-              <h3 className="font-semibold">Kelola Penduduk</h3>
-              <p className="text-sm text-muted-foreground">Lihat dan kelola data penduduk</p>
-            </div>
-          </div>
-        </Link>
-        <Link to="/rt/surat" className="bg-card rounded-xl p-6 border border-border hover:border-primary transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-warning/10 text-warning group-hover:bg-warning group-hover:text-warning-foreground transition-colors">
-              <FileText size={24} />
-            </div>
-            <div>
-              <h3 className="font-semibold">Proses Surat</h3>
-              <p className="text-sm text-muted-foreground">{pendingSurat.length} surat menunggu diproses</p>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base">Kelola Penduduk</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Lihat dan kelola data penduduk</p>
             </div>
           </div>
         </Link>
-        <Link to="/rt/laporan" className="bg-card rounded-xl p-6 border border-border hover:border-primary transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
-              <MessageSquare size={24} />
+        <Link to="/surat" className="bg-card rounded-xl p-4 sm:p-6 border border-border hover:border-primary transition-colors group">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-warning/10 text-warning group-hover:bg-warning group-hover:text-warning-foreground transition-colors">
+              <FileText size={20} className="sm:hidden" />
+              <FileText size={24} className="hidden sm:block" />
             </div>
-            <div>
-              <h3 className="font-semibold">Tindak Laporan</h3>
-              <p className="text-sm text-muted-foreground">{activeLaporan.length} laporan perlu ditindak</p>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base">Proses Surat</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{pendingSurat.length} surat menunggu diproses</p>
+            </div>
+          </div>
+        </Link>
+        <Link to="/laporan" className="bg-card rounded-xl p-4 sm:p-6 border border-border hover:border-primary transition-colors group">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
+              <MessageSquare size={20} className="sm:hidden" />
+              <MessageSquare size={24} className="hidden sm:block" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base">Tindak Laporan</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{activeLaporan.length} laporan perlu ditindak</p>
             </div>
           </div>
         </Link>
@@ -121,8 +124,8 @@ const RTDashboard: React.FC = () => {
         {/* Pending Surat */}
         <div className="bg-card rounded-xl p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Surat Menunggu Persetujuan</h3>
-            <Link to="/rt/surat" className="text-sm text-primary hover:underline">Lihat semua</Link>
+            <h3 className="font-semibold text-sm sm:text-base">Surat Menunggu Persetujuan</h3>
+            <Link to="/surat" className="text-sm text-primary hover:underline">Lihat semua</Link>
           </div>
           {pendingSurat.length > 0 ? (
             <div className="space-y-3">
@@ -147,8 +150,8 @@ const RTDashboard: React.FC = () => {
         {/* Active Laporan */}
         <div className="bg-card rounded-xl p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Laporan Perlu Ditindak</h3>
-            <Link to="/rt/laporan" className="text-sm text-primary hover:underline">Lihat semua</Link>
+            <h3 className="font-semibold text-sm sm:text-base">Laporan Perlu Ditindak</h3>
+            <Link to="/laporan" className="text-sm text-primary hover:underline">Lihat semua</Link>
           </div>
           {activeLaporan.length > 0 ? (
             <div className="space-y-3">

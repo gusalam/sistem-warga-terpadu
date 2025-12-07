@@ -130,6 +130,7 @@ const SuratManagement: React.FC = () => {
         id: selectedSurat.id,
         status: 'selesai',
         processed_by: user.id,
+        jenis_surat: selectedSurat.jenis_surat,
       }, {
         onSuccess: () => {
           setIsApproveDialogOpen(false);
@@ -277,22 +278,22 @@ const SuratManagement: React.FC = () => {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-2xl font-bold">{suratList.length}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border">
+          <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+          <p className="text-xl sm:text-2xl font-bold">{suratList.length}</p>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border border-l-4 border-l-warning">
-          <p className="text-sm text-muted-foreground">Menunggu</p>
-          <p className="text-2xl font-bold text-warning">{suratList.filter(s => s.status === 'pending').length}</p>
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border border-l-4 border-l-warning">
+          <p className="text-xs sm:text-sm text-muted-foreground">Menunggu</p>
+          <p className="text-xl sm:text-2xl font-bold text-warning">{suratList.filter(s => s.status === 'pending').length}</p>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border border-l-4 border-l-primary">
-          <p className="text-sm text-muted-foreground">Diproses</p>
-          <p className="text-2xl font-bold text-primary">{suratList.filter(s => s.status === 'diproses').length}</p>
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border border-l-4 border-l-primary">
+          <p className="text-xs sm:text-sm text-muted-foreground">Diproses</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{suratList.filter(s => s.status === 'diproses').length}</p>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border border-l-4 border-l-success">
-          <p className="text-sm text-muted-foreground">Selesai</p>
-          <p className="text-2xl font-bold text-success">{suratList.filter(s => s.status === 'selesai').length}</p>
+        <div className="bg-card rounded-xl p-3 sm:p-4 border border-border border-l-4 border-l-success">
+          <p className="text-xs sm:text-sm text-muted-foreground">Selesai</p>
+          <p className="text-xl sm:text-2xl font-bold text-success">{suratList.filter(s => s.status === 'selesai').length}</p>
         </div>
       </div>
 

@@ -79,6 +79,30 @@ export function useCreateSurat() {
   });
 }
 
+// Generate nomor surat otomatis
+async function generateNomorSurat(jenis_surat: string): Promise<string> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  
+  // Get count of surat this month
+  const startOfMonth = `${year}-${month}-01`;
+  const endOfMonth = new Date(year, now.getMonth() + 1, 0).toISOString().split('T')[0];
+  
+  const { count, error } = await supabase
+    .from('surat')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', startOfMonth)
+    .lte('created_at', endOfMonth + 'T23:59:59');
+    
+  if (error) throw error;
+  
+  const sequence = String((count || 0) + 1).padStart(4, '0');
+  const jenisCode = jenis_surat.substring(0, 3).toUpperCase();
+  
+  return `${sequence}/SKT-${jenisCode}/${month}/${year}`;
+}
+
 export function useUpdateSuratStatus() {
   const queryClient = useQueryClient();
 
@@ -87,17 +111,24 @@ export function useUpdateSuratStatus() {
       id, 
       status, 
       catatan,
-      processed_by 
+      processed_by,
+      jenis_surat
     }: { 
       id: string; 
       status: SuratStatus; 
       catatan?: string;
       processed_by?: string;
+      jenis_surat?: string;
     }) => {
       const updateData: Record<string, any> = { 
         status,
         processed_at: new Date().toISOString(),
       };
+
+      // Generate nomor surat when approved
+      if (status === 'selesai' && jenis_surat) {
+        updateData.nomor_surat = await generateNomorSurat(jenis_surat);
+      }
 
       if (catatan !== undefined) updateData.catatan = catatan;
       if (processed_by) updateData.processed_by = processed_by;

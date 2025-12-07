@@ -97,10 +97,10 @@ const RWDashboard: React.FC = () => {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Surat */}
-        <div className="bg-card rounded-xl p-6 border border-border">
+        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Surat Terbaru</h3>
-            <Link to="/rw/surat" className="text-sm text-primary hover:underline">Lihat semua</Link>
+            <h3 className="font-semibold text-sm sm:text-base">Surat Terbaru</h3>
+            <Link to="/surat" className="text-sm text-primary hover:underline">Lihat semua</Link>
           </div>
           {pendingSurat.length > 0 ? (
             <div className="space-y-3">
@@ -134,10 +134,10 @@ const RWDashboard: React.FC = () => {
         </div>
 
         {/* Recent Laporan */}
-        <div className="bg-card rounded-xl p-6 border border-border">
+        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Laporan Terbaru</h3>
-            <Link to="/rw/laporan" className="text-sm text-primary hover:underline">Lihat semua</Link>
+            <h3 className="font-semibold text-sm sm:text-base">Laporan Terbaru</h3>
+            <Link to="/laporan" className="text-sm text-primary hover:underline">Lihat semua</Link>
           </div>
           {activeLaporan.length > 0 ? (
             <div className="space-y-3">

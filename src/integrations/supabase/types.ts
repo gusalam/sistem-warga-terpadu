@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda: {
+        Row: {
+          created_at: string | null
+          deskripsi: string | null
+          id: string
+          is_active: boolean | null
+          judul: string
+          lokasi: string | null
+          tanggal: string
+          updated_at: string | null
+          waktu: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          is_active?: boolean | null
+          judul: string
+          lokasi?: string | null
+          tanggal: string
+          updated_at?: string | null
+          waktu?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deskripsi?: string | null
+          id?: string
+          is_active?: boolean | null
+          judul?: string
+          lokasi?: string | null
+          tanggal?: string
+          updated_at?: string | null
+          waktu?: string | null
+        }
+        Relationships: []
+      }
+      banner: {
+        Row: {
+          created_at: string | null
+          deskripsi: string | null
+          gambar_url: string
+          id: string
+          is_active: boolean | null
+          judul: string
+          link_url: string | null
+          updated_at: string | null
+          urutan: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          deskripsi?: string | null
+          gambar_url: string
+          id?: string
+          is_active?: boolean | null
+          judul: string
+          link_url?: string | null
+          updated_at?: string | null
+          urutan?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          deskripsi?: string | null
+          gambar_url?: string
+          id?: string
+          is_active?: boolean | null
+          judul?: string
+          link_url?: string | null
+          updated_at?: string | null
+          urutan?: number | null
+        }
+        Relationships: []
+      }
+      berita: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          gambar_url: string | null
+          id: string
+          is_published: boolean | null
+          judul: string
+          konten: string
+          published_at: string | null
+          ringkasan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          gambar_url?: string | null
+          id?: string
+          is_published?: boolean | null
+          judul: string
+          konten: string
+          published_at?: string | null
+          ringkasan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          gambar_url?: string | null
+          id?: string
+          is_published?: boolean | null
+          judul?: string
+          konten?: string
+          published_at?: string | null
+          ringkasan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       laporan: {
         Row: {
           created_at: string | null

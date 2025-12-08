@@ -7,19 +7,19 @@
 @layer base {
   :root {
     --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 210 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 210 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 210 25% 15%;
 
-    --primary: 199 89% 48%;
+    --primary: 205 55% 23%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 210 25% 15%;
 
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
@@ -38,47 +38,57 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 199 89% 48%;
+    --ring: 20 85% 55%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 20%;
-    --sidebar-ring: 199 89% 48%;
+    /* Header - Dark Blue #153A5B */
+    --header: 205 55% 22%;
+    --header-foreground: 0 0% 100%;
+    --header-accent: 205 55% 30%;
 
-    --chart-1: 199 89% 48%;
+    /* CTA - Orange #E07A3F */
+    --cta: 20 72% 56%;
+    --cta-hover: 20 72% 48%;
+    --cta-foreground: 0 0% 100%;
+
+    --sidebar-background: 205 55% 22%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 20 72% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 205 55% 30%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 205 55% 28%;
+    --sidebar-ring: 20 72% 56%;
+
+    --chart-1: 205 55% 22%;
     --chart-2: 142 76% 36%;
-    --chart-3: 38 92% 50%;
+    --chart-3: 20 72% 56%;
     --chart-4: 280 65% 60%;
     --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 222 47% 8%;
+    --background: 210 25% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 11%;
+    --card: 210 25% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 210 25% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 199 89% 48%;
+    --primary: 205 55% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 18%;
+    --secondary: 210 25% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 47% 18%;
+    --muted: 210 25% 18%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 199 89% 20%;
-    --accent-foreground: 199 89% 90%;
+    --accent: 20 72% 20%;
+    --accent-foreground: 20 72% 90%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
@@ -89,18 +99,36 @@
     --warning: 38 92% 40%;
     --warning-foreground: 210 40% 98%;
 
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
-    --ring: 199 89% 48%;
+    --border: 210 25% 20%;
+    --input: 210 25% 20%;
+    --ring: 20 72% 56%;
 
-    --sidebar-background: 222 47% 6%;
+    --header: 205 55% 15%;
+    --header-foreground: 210 40% 98%;
+    --header-accent: 205 55% 22%;
+
+    --cta: 20 72% 56%;
+    --cta-hover: 20 72% 65%;
+    --cta-foreground: 0 0% 100%;
+
+    --sidebar-background: 205 55% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary: 20 72% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent: 205 55% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 15%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-border: 205 55% 15%;
+    --sidebar-ring: 20 72% 56%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -121,7 +149,7 @@
   }
   
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(199 89% 38%) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(205 55% 32%) 100%);
   }
   
   .gradient-card {
@@ -129,7 +157,7 @@
   }
 
   .gradient-hero {
-    background: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(38 92% 50%) 30%, hsl(199 89% 48%) 100%);
+    background: linear-gradient(135deg, hsl(var(--cta)) 0%, hsl(38 92% 50%) 50%, hsl(var(--header)) 100%);
   }
 
   .animate-fade-in {
@@ -137,11 +165,11 @@
   }
 
   .animate-slide-up {
-    animation: slide-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: slide-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .animate-scale-in {
-    animation: scale-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: scale-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .animate-float {
@@ -161,11 +189,11 @@
   }
 
   .animate-slide-in-left {
-    animation: slide-in-left 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: slide-in-left 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .animate-slide-in-right {
-    animation: slide-in-right 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: slide-in-right 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .animate-bounce-subtle {
@@ -196,7 +224,7 @@
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -207,7 +235,7 @@
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
@@ -220,34 +248,34 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-15px);
   }
 }
 
 @keyframes float-reverse {
   0%, 100% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   50% {
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    opacity: 0.6;
+    opacity: 0.7;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
 }
 
 @keyframes slide-in-left {
   from {
     opacity: 0;
-    transform: translateX(-50px);
+    transform: translateX(-30px);
   }
   to {
     opacity: 1;
@@ -258,7 +286,7 @@
 @keyframes slide-in-right {
   from {
     opacity: 0;
-    transform: translateX(50px);
+    transform: translateX(30px);
   }
   to {
     opacity: 1;
@@ -271,7 +299,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-4px);
   }
 }
 
